@@ -15,21 +15,20 @@ tar zxvf $RRelease.tar.gz; cd $RRelease/ &nbsp;
 #Modifier la liste des paquets recommendés &nbsp;
 sed -i -e 's/R_PKGS_RECOMMENDED =  MASS lattice Matrix nlme survival boot cluster codetools foreign KernSmooth rpart class nnet spatial mgcv/R_PKGS_RECOMMENDED =  MASS lattice Matrix nlme survival boot cluster codetools foreign KernSmooth rpart class nnet spatial mgcv Rcpp R6 rlang BH haven remotes later promises httpuv ellipsis glue pkgconfig vctrs hms tibble clipr crayon readr digest mime xtable htmltools lifecycle sourcetools fastmap magrittr purrr tidyselect evaluate shiny shinydashboard shinyalert shinyFeedback dplyr dbplyr RMySQL DBI jsonlite yaml xml2 lubridate plotly ggplot2 devtools micromap GGally data.table curl rmarkdown dygraphs C50 shinydashboardPlus shinyhttr shinyEventLogger shinythemes shinyWidgets shinybrms shinyr blob withr assertthat/g'  ./share/make/vars.mk &nbsp;
 
-#ajouter les nouveaux .tar.gz &nbsp;
+#ajouter les nouveaux .tar.gz
 
-cd src/library/Recommended &nbsp;
+cd src/library/Recommended
 
-#A
-wget https://cran.rstudio.com/src/contrib/assertthat_0.2.1.tar.gz &nbsp;
-#B
-wget https://cran.rstudio.com/src/contrib/blob_1.2.1.tar.gz &nbsp;
-wget https://cran.rstudio.com/src/contrib/BH_1.72.0-3.tar.gz &nbsp;
-#C
-wget https://cran.rstudio.com/src/contrib/clipr_0.7.0.tar.gz &nbsp;
-wget https://cran.rstudio.com/src/contrib/crayon_1.3.4.tar.gz &nbsp;
-wget https://cran.rstudio.com/src/contrib/curl_4.3.tar.gz &nbsp;
-wget https://cran.rstudio.com/src/contrib/C50_0.1.3.1.tar.gz &nbsp;
-#D
+# A&nbsp;
+wget https://cran.rstudio.com/src/contrib/assertthat_0.2.1.tar.gz&nbsp;
+wget https://cran.rstudio.com/src/contrib/blob_1.2.1.tar.gz&nbsp;
+wget https://cran.rstudio.com/src/contrib/BH_1.72.0-3.tar.gz&nbsp;
+# C&nbsp;
+wget https://cran.rstudio.com/src/contrib/clipr_0.7.0.tar.gz&nbsp;
+wget https://cran.rstudio.com/src/contrib/crayon_1.3.4.tar.gz&nbsp;
+wget https://cran.rstudio.com/src/contrib/curl_4.3.tar.gz&nbsp;
+wget https://cran.rstudio.com/src/contrib/C50_0.1.3.1.tar.gz&nbsp;
+# D&nbsp;
 wget https://cran.rstudio.com/src/contrib/dbplyr_1.4.4.tar.gz
 wget https://cran.rstudio.com/src/contrib/DBI_1.1.0.tar.gz
 wget https://cran.rstudio.com/src/contrib/dplyr_0.8.5.tar.gz
