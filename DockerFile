@@ -1,0 +1,33 @@
+FROM debian:buster-slim
+#
+#Lib installation
+RUN mkdir -p /usr/share/man/man1 && apt-get update -y  && apt-get install -y --no-install-recommends libssh2-1-dev libssl-dev libgomp1 libatlas-base-dev libreadline6-dev libicu-dev libbz2-dev g++ gfortran libxml2-dev libfontconfig1-dev libcurl4-openssl-dev gcc make libmariadbclient-dev libx11-dev curl libssl-dev libxt-dev libcairo2-dev libcurl4-openssl-dev libc6-dev libudunits2-dev openjdk-11-jdk libgeos-dev libpq-dev unixodbc-dev libgdal-dev libsasl2-dev git pandoc
+
+#git clone y tar
+RUN git clone https://github.com/yannyven/Artemisa_Project.git && tar -C / -xzvf /Artemisa_Project/tar_file/rstudio-server-v1.3.959.tar.gz && tar -C / -xzvf /Artemisa_Project/tar_file/r363.tar.gz && tar -C / -xzvf /Artemisa_Project/tar_file/shinyserver-v1.5.13.944.tar.gz
+
+RUN cp -rf /temp1/* / && cp -rf /temp/* / && mkdir /etc/shiny-server/ && cp /Artemisa_Project/default.config /etc/shiny-server/shiny-server.conf 
+
+# Config R y RstudioServer
+RUN export R_VERSION=3.6.3 && JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf" && ln -s /opt/R/bin/R /usr/local/bin/R && ln -s /opt/R/bin/Rscript /usr/local/bin/Rscript && useradd -r rstudio-server && cp /usr/local/lib/rstudio-server/extras/init.d/debian/rstudio-server /etc/init.d/rstudio-server && chmod +x /etc/init.d/rstudio-server && update-rc.d rstudio-server defaults && ln -f -s /usr/local/lib/rstudio-server/bin/rstudio-server /usr/sbin/rstudio-server && mkdir /usr/local/lib/R/ && mkdir /usr/local/lib/R/site-library/ && chmod 777 -R /usr/local/lib/R/site-library/ && mkdir -p /var/run/rstudio-server && mkdir -p /var/lock/rstudio-server && mkdir -p /var/log/rstudio-server && mkdir -p /var/lib/rstudio-server 
+
+#Config Shiny Server
+RUN ln -s /usr/local/shiny-server/bin/shiny-server /usr/bin/shiny-server && useradd -r -m shiny && mkdir -p /var/log/shiny-server && mkdir -p /srv/shiny-server && mkdir -p /var/lib/shiny-server && chown shiny /var/log/shiny-server && mkdir -p /etc/shiny-server && cp -rf /Artemisa_Project/tar_file/sample/* /srv/shiny-server/ && rm /usr/local/shiny-server/ext/pandoc/pandoc && ln /usr/bin/pandoc /usr/local/shiny-server/ext/pandoc/pandoc
+
+#Installation Lib R
+RUN R CMD javareconf && R -e "install.packages(c('shiny','shinyalert','RMySQL','dygraphs','C50','shinydashboard','shinyalert','lubridate','shinyFeedback','shinyWidgets','shinyhttr','shinydashboardPlus','dplyr','sqldf','mongolite','RMariaDB','shinyr','DBI','ggplot2','plotly','shinyEventLogger','devtools','dbplyr','digest','rmarkdown'),repos='http://cran.rstudio.com/',dependencies = TRUE)"
+
+#Clean
+RUN rm -rf /var/lib/apt/lists/* /var/tmp/* /Artemisa_Project /temp1 /temp && apt autoremove && apt-get clean
+
+#Run always
+RUN set -x \
+   && runfile='/bin/run-rstudio-shiny-server' \
+   && (echo "#!/bin/bash"; \
+       echo "rstudio-server start && shiny-server; while true; do sleep 10000; done") \
+       > "${runfile}" \
+  && chmod 755 "${runfile}"
+
+CMD ["/bin/run-rstudio-shiny-server"]
+
+EXPOSE 8787 3838
