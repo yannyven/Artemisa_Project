@@ -1,0 +1,48 @@
+#########################################
+######## Rstudio Server v1.3.959 ########
+######## R              v3.6.3   ########
+################################################################################################################
+## References:																								  ##
+## ----------- 																								  ##
+## https://rstudio.com/products/rstudio/download-server/other-platforms/									  ##
+## https://community.rstudio.com/t/setting-up-your-own-shiny-server-rstudio-server-on-a-raspberry-pi-3b/18982 ##
+################################################################################################################
+
+FROM debian:buster-slim as step1
+WORKDIR /app
+RUN apt-get update -y && mkdir -p /usr/share/man/man1 && apt-get install -y git openjdk-11-jdk libxml2-dev libfontconfig1-dev gfortran libmariadbclient-dev sudo curl libssl-dev libxt-dev libcairo2-dev libcurl4-openssl-dev libudunits2-dev libgomp1 libgeos-dev libsasl2-dev libpq-dev unixodbc-dev libgdal-dev build-essential make gcc g++ liblzma-dev libreadline6-dev libreadline6-dev libx11-dev libbz2-dev wget && rm -rf /var/cache/apt/ && git clone https://github.com/yannyven/Artemisa_deb_file.git && wget https://github.com/rstudio/rstudio/tarball/v1.3.959/rstudio-rstudio-v1.3.959-0-g3a09be3.tar.gz && tar -xzvf rstudio-rstudio-v1.3.959-0-g3a09be3.tar.gz && rm ./rstudio-rstudio-3a09be3/dependencies/common/install-common && cp ./Artemisa_deb_file/install-dependencies-buster rstudio-rstudio-3a09be3/dependencies/linux/ && cp ./Artemisa_deb_file/install-common ./rstudio-rstudio-3a09be3/dependencies/common/ && cd ./rstudio-rstudio-3a09be3/dependencies/linux/ && sh install-dependencies-buster && cd .. && cd common && sh install-common && cd ..  && cd .. && mkdir build && cd build && cmake .. -DRSTUDIO_TARGET=Server -DCMAKE_BUILD_TYPE=Release && make DESTDIR=/temp install
+
+FROM debian:buster-slim as step2
+WORKDIR /app
+RUN export R_VERSION=3.6.3 && apt-get update -y && mkdir -p /usr/share/man/man1 && apt-get install -y git openjdk-11-jdk libxml2-dev libfontconfig1-dev gfortran libmariadbclient-dev curl libssl-dev libxt-dev libcairo2-dev libcurl4-openssl-dev libudunits2-dev libgomp1 libgeos-dev libsasl2-dev libpq-dev unixodbc-dev libgdal-dev build-essential make gcc g++ liblzma-dev libreadline6-dev libreadline6-dev libx11-dev libbz2-dev && git clone https://github.com/yannyven/Artemisa_deb_file.git && apt install -y ./Artemisa_deb_file/libssl1.0.2_1.0.2u-1_deb9u1_armhf.deb &&  cd /home && curl -O https://cran.rstudio.com/src/base/R-3/R-${R_VERSION}.tar.gz && tar -xzvf R-${R_VERSION}.tar.gz && cd R-${R_VERSION} && ./configure --prefix=/opt/R/${R_VERSION} -enable-memory-profiling --enable-R-shlib --with-blas --with-lapack && make && make DESTDIR=/temp install
+
+FROM debian:buster-slim
+COPY --from=step1 /temp/ /
+COPY --from=step2 /temp/ /
+RUN export R_VERSION=3.6.3 && apt-get update -y  && mkdir -p /usr/share/man/man1 && apt-get install -y --no-install-recommends libssh2-1-dev libssl-dev libgomp1 libatlas-base-dev libreadline6-dev libicu-dev libbz2-dev libxml2-dev libfontconfig1-dev libcurl4-openssl-dev gcc make libmariadbclient-dev libx11-dev curl libssl-dev libxt-dev libcairo2-dev libcurl4-openssl-dev libc6-dev libudunits2-dev openjdk-11-jdk libgeos-dev libpq-dev unixodbc-dev libgdal-dev libsasl2-dev && JAVA_HOME="/usr/lib/jvm/java-11-openjdk-armhf" && ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R && ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript && useradd -r rstudio-server && cp /usr/local/lib/rstudio-server/extras/init.d/debian/rstudio-server /etc/init.d/rstudio-server && chmod +x /etc/init.d/rstudio-server && update-rc.d rstudio-server defaults && ln -f -s /usr/local/lib/rstudio-server/bin/rstudio-server /usr/sbin/rstudio-server && mkdir /usr/local/lib/R/ && mkdir /usr/local/lib/R/site-library/ && chmod 777 -R /usr/local/lib/R/site-library/ && mkdir -p /var/run/rstudio-server && mkdir -p /var/lock/rstudio-server && mkdir -p /var/log/rstudio-server && mkdir -p /var/lib/rstudio-server && update-rc.d rstudio-server enable && R CMD javareconf && R -e "install.packages(c('shiny','shinyalert','RMySQL','dygraphs','C50','shinydashboard','shinyalert','lubridate','shinyFeedback','shinyWidgets','shinyhttr','shinydashboardPlus','dplyr','sqldf','mongolite','RMariaDB','shinyr','DBI','ggplot2','plotly','shinyEventLogger','devtools','dbplyr'),repos='http://cran.rstudio.com/',dependencies = TRUE)" && rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/* && apt autoremove && apt-get clean
+
+CMD rstudio-server start
+EXPOSE 8787
+
+
+sudo make && sudo make DESTDIR=/temp1 install
+
+
+##########################################
+######## Shiny Server v1.5.13.944 ########
+######## R            v3.6.3      ########
+################################################################################################################
+## References:																								  ##
+## ----------- 																								  ##
+## https://docs.rstudio.com/resources/install-r-source/														  ##
+## https://community.rstudio.com/t/setting-up-your-own-shiny-server-rstudio-server-on-a-raspberry-pi-3b/18982 ##
+################################################################################################################
+
+FROM debian:buster-slim as step1
+WORKDIR /app
+RUN export R_VERSION=3.6.3 && apt-get update -y && mkdir -p /usr/share/man/man1 && apt-get install -y git openjdk-11-jdk libxml2-dev libfontconfig1-dev gfortran libmariadbclient-dev curl libssl-dev libxt-dev libcairo2-dev libcurl4-openssl-dev libudunits2-dev libgomp1 libgeos-dev libsasl2-dev libpq-dev unixodbc-dev libgdal-dev build-essential make gcc  g++ liblzma-dev libreadline6-dev libreadline6-dev libx11-dev libbz2-dev && git clone https://github.com/yannyven/Artemisa_deb_file.git && apt install -y ./Artemisa_deb_file/libssl1.0.2_1.0.2u-1_deb9u1_armhf.deb &&  cd /home && curl -O https://cran.rstudio.com/src/base/R-3/R-${R_VERSION}.tar.gz && tar -xzvf R-${R_VERSION}.tar.gz && cd R-${R_VERSION} && make && make DESTDIR=/temp install
+
+FROM debian:buster-slim as step1
+WORKDIR /app
+RUN apt-get update -y && mkdir -p /usr/share/man/man1 && apt-get install -y git openjdk-11-jdk libxml2-dev libfontconfig1-dev gfortran libmariadbclient-dev sudo curl libssl-dev libxt-dev libcairo2-dev libcurl4-openssl-dev libudunits2-dev libgomp1 libgeos-dev libsasl2-dev libpq-dev unixodbc-dev libgdal-dev build-essential make gcc g++ liblzma-dev libreadline6-dev libreadline6-dev libx11-dev libbz2-dev wget 
+
