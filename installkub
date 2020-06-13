@@ -1,0 +1,64 @@
+#All 
+IP_MASTER=192.168.50.200
+IP_NODE1=192.168.50.201
+IP_NODE2=192.168.50.202
+IP_NODE3=192.168.50.203
+IP_RPI3=192.168.50.204
+
+PASSWORD=raspberry
+ssh $IP_MASTER -P 22 -l pi -pw $PASSWORD
+
+ALL
+sudo dphys-swapfile swapoff
+sudo dphys-swapfile uninstall
+sudo update-rc.d dphys-swapfile remove
+sudo apt-get remove dphys-swapfile -y
+swapoff -a
+sudo apt autoremove -y
+sudo echo "interface eth0" >> /etc/dhcpcd.conf
+
+#Master
+sudo echo "static ip_address=$IP_MASTER/24" >> /etc/dhcpcd.conf
+#Node1
+sudo echo "static ip_address=$IP_NODE1/24" >> /etc/dhcpcd.conf
+#Node2
+sudo echo "static ip_address=$IP_NODE2/24" >> /etc/dhcpcd.conf
+
+#ALL
+sudo echo "static routers=192.168.50.1" >> /etc/dhcpcd.conf
+sudo echo "static domain_name_servers=192.168.50.1" >> /etc/dhcpcd.conf
+sudo reboot
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker pi
+sudo sysctl net.bridge.bridge-nf-call-iptables=1 
+sudo apt-get install apt-transport-https
+sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+sudo echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list
+sudo reboot
+sudo apt-get update -y
+sudo apt-get install kubeadm kubelet kubectl kubernetes-cni -y
+
+#Master Only
+
+sudo kubeadm reset -f
+sudo kubeadm init --apiserver-advertise-address=$IP_MASTER --token="abcdef.0123456789abcdef" --pod-network-cidr=10.244.0.0/16
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+sudo systemctl enable kubelet
+sudo systemctl restart kubelet
+
+#Node Only
+sudo kubeadm reset -f
+sudo kubeadm join --ignore-preflight-errors=all --token "abcdef.0123456789abcdef" $IP_MASTER:6443 --discovery-token-unsafe-skip-ca-verification
+sudo systemctl enable kubelet
+sudo systemctl restart kubelet
+
+
+
+#reset all  
+sudo kubeadm reset -f && sudo docker ps -aq | wc -l 
+sudo docker rm $(docker ps -a -f status=exited -q)
+sudo docker rmi $(docker images -a -q)
+sudo apt-get remove kubeadm kubelet kubectl kubernetes-cni -y
